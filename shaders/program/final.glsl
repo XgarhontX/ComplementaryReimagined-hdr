@@ -5,6 +5,8 @@
 //Common//
 #include "/lib/common.glsl"
 
+#include "/renodx.glsl"
+
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
@@ -138,12 +140,17 @@ void main() {
 
     #ifdef VIGNETTE_R
         vec2 texCoordMin = texCoordM.xy - 0.5;
-        float vignette = 1.0 - dot(texCoordMin, texCoordMin) * (1.0 - GetLuminance(color));
+        float vignette = 1.0 - dot(texCoordMin, texCoordMin) * (1.0 - GetLuminance(Reinhard(color)));
         color *= vignette;
     #endif
 
-    float dither = texture2DLod(noisetex, texCoord * view / 128.0, 0.0).b;
-    color += vec3((dither - 0.25) / 128.0);
+    #ifndef RENODX_ENABLED
+        float dither = texture2DLod(noisetex, texCoord * view / 128.0, 0.0).b;
+        color += vec3((dither - 0.25) / 128.0);
+    #endif
+
+    //RenderIntermediatePass
+    color = RenderIntermediatePass(color);
 
     /* DRAWBUFFERS:0 */
     gl_FragData[0] = vec4(color, 1.0);

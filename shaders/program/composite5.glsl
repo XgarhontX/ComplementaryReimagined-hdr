@@ -5,6 +5,12 @@
 //Common//
 #include "/lib/common.glsl"
 
+#define RENODX_UPGRADE_ENABLED
+#define RENODX_SCALING_DEFAULT RENODX_SCALING_Y
+#define RENODX_WORKING_COLORSPACE RENODX_BT709
+#define RENODX_HDRTONEMAP_TYPE_DEFAULT RENODX_HDRTONEMAP_TYPE_REINHARD
+#include "/renodx.glsl"
+
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
 #ifdef FRAGMENT_SHADER
 
@@ -33,7 +39,11 @@ void LinearToRGB(inout vec3 color) {
     color = mix((vec3(1.0) + k) * pow(color, vec3(1.0 / 2.4)) - k, 12.92 * color, lessThan(color, vec3(0.0031308)));
 }
 
-void DoCompTonemap(inout vec3 color) {
+struct TonemapResult {
+    vec3 color;
+    float initialLuminance;
+};
+TonemapResult DoCompTonemap_Lottes(in vec3 color) {
     // Lottes tonemap modified for Complementary Shaders
     // Lottes 2016, "Advanced Techniques and Optimization of HDR Color Pipelines"
     // http://32ipi028l5q82yhj72224m8j.wpengine.netdna-cdn.com/wp-content/uploads/2016/03/GdcVdrLottes.pdf
@@ -59,8 +69,21 @@ void DoCompTonemap(inout vec3 color) {
     vec3 b = (-midInA + HM1) / (HM2 * midOut);
     vec3 c = (hdrMaxAD * midInA - HM1 * midInAD) / (HM2 * midOut);
 
-    vec3 colorOut = pow(color, a) / (pow(color, a_d) * b + c);
+    color = pow(color, a) / (pow(color, a_d) * b + c);
+    // color = max(vec3(0), color);
+    color = clamp01(color);
 
+    TonemapResult result;
+    result.color = color;
+    result.initialLuminance = initialLuminance;
+    return result;
+}
+
+vec3 DoCompTonemap_Adjust_sRGB(in TonemapResult result) {
+    vec3 color = result.color;
+    vec3 colorOut = color;
+    float initialLuminance = result.initialLuminance;
+    
     LinearToRGB(colorOut);
 
     // Remove tonemapping from darker colors for better readability
@@ -83,7 +106,24 @@ void DoCompTonemap(inout vec3 color) {
     float desaturatePath = smoothstep(dpInputCurveStart, dpInputCurveMax, initialLuminance);
     colorOut = mix(colorOut, vec3(GetLuminance(colorOut)), desaturatePath * TM_DARK_DESATURATION);
     
-    color = clamp01(colorOut);
+    color = /* clamp01 */(colorOut);
+
+    return color;
+}
+
+//#define TM_LEGACY_BSL
+#define TM_WHITE_CURVE 2.0 //[1.0 1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9 3.0]
+#define T_LOWER_CURVE 1.10 //[0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00 1.05 1.10 1.15 1.20 1.25 1.30 1.35 1.40 1.45 1.50 1.55 1.60 1.65 1.70 1.75 1.80 1.85 1.90 1.95 2.00]
+#define T_UPPER_CURVE 1.30 //[0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95 1.00 1.05 1.10 1.15 1.20 1.25 1.30 1.35 1.40 1.45 1.50 1.55 1.60 1.65 1.70 1.75 1.80 1.85 1.90 1.95 2.00]
+vec3 DoBSLTonemap(in vec3 color) {
+    color = TM_EXPOSURE * 1.4 * color;
+    
+    color = color / pow(pow(color, vec3(TM_WHITE_CURVE)) + 1.0, vec3(1.0 / TM_WHITE_CURVE));
+    color = pow(color, mix(vec3(T_LOWER_CURVE), vec3(T_UPPER_CURVE), sqrt(color)));
+
+    // color = pow(color, vec3(1.0 / 2.2));
+
+    return color;
 }
 
 void DoBSLColorSaturation(inout vec3 color) {
@@ -202,31 +242,79 @@ void main() {
         color *= 0.01;
     #endif
 
-    DoCompTonemap(color);
+    vec3 colorU = color;
 
-    #if defined GREEN_SCREEN_LIME || SELECT_OUTLINE == 4
-        int materialMaskInt = int(texelFetch(colortex6, texelCoord, 0).g * 255.1);
+    //SDR
+    #if defined RENODX_UPGRADE_ENABLED
+        #ifdef TM_LEGACY_BSL
+            color = DoBSLTonemap(color);
+
+            //midgray exposure trick
+            const float midGray = 0.18;
+            vec3 resultMG = DoBSLTonemap(vec3(midGray));
+            colorU *= YFromBT709(resultMG) / midGray;
+
+            //ApplyPerChannelCorrection
+            color = ApplyPerChannelCorrection(colorU, color);
+
+            LinearToRGB(color);
+        #else
+            TonemapResult result = DoCompTonemap_Lottes(color);
+
+            //midgray exposure trick
+            const float midGray = 0.18;
+            TonemapResult resultMG = DoCompTonemap_Lottes(vec3(midGray));
+            colorU *= YFromBT709(resultMG.color) / midGray;
+
+            //ApplyPerChannelCorrection
+            result.color = ApplyPerChannelCorrection(colorU, result.color);
+
+            color = DoCompTonemap_Adjust_sRGB(result);
+        #endif
+    
+        #if defined GREEN_SCREEN_LIME || SELECT_OUTLINE == 4
+            int materialMaskInt = int(texelFetch(colortex6, texelCoord, 0).g * 255.1);
+        #endif
+
+        #ifdef GREEN_SCREEN_LIME
+            if (materialMaskInt == 240) { // Green Screen Lime Blocks
+                color = vec3(0.0, 1.0, 0.0);
+            }
+        #endif
+
+        #if SELECT_OUTLINE == 4
+            if (materialMaskInt == 252) { // Versatile Selection Outline
+                float colorMF = 1.0 - dot(color, vec3(0.25, 0.45, 0.1));
+                colorMF = smoothstep1(smoothstep1(smoothstep1(smoothstep1(smoothstep1(colorMF)))));
+                color = mix(color, 3.0 * (color + 0.2) * vec3(colorMF * SELECT_OUTLINE_I), 0.3);
+            }
+        #endif
+
+        #if LENSFLARE_MODE > 0 && defined OVERWORLD
+            DoLensFlare(color, viewPos.xyz, dither, 1);
+        #endif
+
+        DoBSLColorSaturation(color);
+
+        color = SrgbDecodeSafe(color);
+    #else 
+        colorU *= TM_EXPOSURE;
     #endif
 
-    #ifdef GREEN_SCREEN_LIME
-        if (materialMaskInt == 240) { // Green Screen Lime Blocks
-            color = vec3(0.0, 1.0, 0.0);
-        }
-    #endif
-
-    #if SELECT_OUTLINE == 4
-        if (materialMaskInt == 252) { // Versatile Selection Outline
-            float colorMF = 1.0 - dot(color, vec3(0.25, 0.45, 0.1));
-            colorMF = smoothstep1(smoothstep1(smoothstep1(smoothstep1(smoothstep1(colorMF)))));
-            color = mix(color, 3.0 * (color + 0.2) * vec3(colorMF * SELECT_OUTLINE_I), 0.3);
-        }
-    #endif
+    //HDR
+    colorU = SrgbEncodeSafe(colorU);
 
     #if LENSFLARE_MODE > 0 && defined OVERWORLD
-        DoLensFlare(color, viewPos.xyz, dither);
+        DoLensFlare(colorU, viewPos.xyz, dither, 2);
     #endif
 
-    DoBSLColorSaturation(color);
+    DoBSLColorSaturation(colorU);
+
+    colorU = SrgbDecodeSafe(colorU);
+
+    //ToneMapPass
+    color = ToneMapPass(colorU, color, texCoord);
+    color = SrgbEncodeSafe(color);
 
     /* DRAWBUFFERS:3 */
     gl_FragData[0] = vec4(color, 1.0);

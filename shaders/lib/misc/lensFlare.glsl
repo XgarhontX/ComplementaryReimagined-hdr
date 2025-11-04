@@ -37,7 +37,7 @@ vec2 lensFlareCheckOffsets[4] = vec2[4](
     vec2( 1.0,1.0)
 );
 
-void DoLensFlare(inout vec3 color, vec3 viewPos, float dither) {
+void DoLensFlare(inout vec3 color, vec3 viewPos, float dither, float strengthMult) {
     #if LENSFLARE_MODE == 1
         if (sunVec.z > 0.0) return;
     #endif
@@ -71,7 +71,7 @@ void DoLensFlare(inout vec3 color, vec3 viewPos, float dither) {
 
     float str = length(lightPos * vec2(aspectRatio, 1.0));
     str = pow(clamp(str * 8.0, 0.0, 1.0), 2.0) - clamp(str * 3.0 - 1.5, 0.0, 1.0);
-    flareFactor *= str;
+    flareFactor *= str * strengthMult;
 
     #ifdef SUN_MOON_DURING_RAIN
         flareFactor *= 0.65 - 0.4 * rainFactor;

@@ -40,7 +40,7 @@ vec3 BloomTile(float lod, vec2 offset, vec2 scaledCoord) {
                 float wg = weight[i + 3] * weight[j + 3];
                 vec2 pixelOffset = vec2(i, j) / view;
                 vec2 bloomCoord = (scaledCoord - offset + pixelOffset) * scale;
-                bloom += texture2D(colortex0, bloomCoord).rgb * wg;
+                bloom += max(vec3(0), texture2D(colortex0, bloomCoord).rgb) * wg;
             }
         }
         bloom /= 4096.0;
@@ -92,6 +92,7 @@ void main() {
 
         if (z <= 0.56) {
             color = texelFetch(colortex0, texelCoord, 0).rgb;
+            color = max(vec3(0), color);
         } else {
             float mbwg = 0.0;
             vec2 doublePixel = 2.0 / vec2(viewWidth, viewHeight);
@@ -125,6 +126,7 @@ void main() {
             for (int i = 0; i < sampleCount; i++, coord += velocity) {
                 vec2 coordb = clamp(coord, doublePixel, 1.0 - doublePixel);
                 vec3 sampleb = texture2DLod(colortex0, coordb, 0).rgb;
+                sampleb = max(vec3(0), sampleb);
                 
                 #ifdef MOTION_BLUR_BLOOM_FOG_FIX
                     float z0 = texture2D(depthtex0, coordb).r;

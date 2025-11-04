@@ -105,11 +105,11 @@
                 vec2 offset = dofOffsets[i] * coc * 0.0085 * dofScale;
                 float lod = log2(viewHeight * aspectRatio * coc * 0.75 / 320.0);
                 #ifndef WB_CHROMATIC
-                    dof += texture2DLod(colortex0, texCoord + offset, lod).rgb;
+                    dof += max(vec3(0), texture2DLod(colortex0, texCoord + offset, lod).rgb);
                 #else
-                    dof += vec3(texture2DLod(colortex0, texCoord + offset + aberration, lod).r,
-                                texture2DLod(colortex0, texCoord + offset             , lod).g,
-                                texture2DLod(colortex0, texCoord + offset - aberration, lod).b);
+                    dof += vec3(max(0, texture2DLod(colortex0, texCoord + offset + aberration, lod).r),
+                                max(0, texture2DLod(colortex0, texCoord + offset             , lod).g),
+                                max(0, texture2DLod(colortex0, texCoord + offset - aberration, lod).b));
                 #endif
             }
             dof /= 18.0;
@@ -126,6 +126,7 @@
 //Program//
 void main() {
     vec3 color = texelFetch(colortex0, texelCoord, 0).rgb;
+    color = max(vec3(0), color);
 
     #if WORLD_BLUR > 0
         float z1 = texelFetch(depthtex1, texelCoord, 0).r;

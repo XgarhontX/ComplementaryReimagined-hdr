@@ -178,6 +178,7 @@ void main() {
                         prevRefCurrentPosHeuristic.xyz = 0.5 * prevRefCurrentPosHeuristic.xyz / prevRefCurrentPosHeuristic.w + 0.5;
 
                         vec4 prevRef = texture2D(colortex7, virtualPrevRefPos.xy);
+                        prevRef = max(vec4(0), prevRef);
                         float prevValid = exp(
                             - 0.03 * length(view * (virtualPrevRefPos.xy - texCoord))
                             - min(0.75, 10.0 * sqrt(length(cameraPosition - previousCameraPosition)))

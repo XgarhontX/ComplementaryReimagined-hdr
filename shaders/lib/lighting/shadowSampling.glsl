@@ -14,7 +14,7 @@ vec3 SampleShadow(vec3 shadowPos, float colorMult, float colorPow) {
     if (shadow0 < 1.0) {
         float shadow1 = shadow2D(shadowtex1, vec3(shadowPos.st, shadowPos.z)).x;
         if (shadow1 > 0.9999) {
-            shadowcol = texture2D(shadowcolor0, shadowPos.st).rgb * shadow1;
+            shadowcol = max(vec3(0), texture2D(shadowcolor0, shadowPos.st).rgb) * shadow1;
 
             shadowcol *= colorMult;
             shadowcol = pow(shadowcol, vec3(colorPow));

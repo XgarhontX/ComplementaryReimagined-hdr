@@ -94,6 +94,7 @@ float GetLinearDepth(float depth) {
 //Program//
 void main() {
     vec3 color = texelFetch(colortex0, texelCoord, 0).rgb;
+    color = max(vec3(0), color);
     float z0 = texelFetch(depthtex0, texelCoord, 0).r;
     float z1 = texelFetch(depthtex1, texelCoord, 0).r;
 
@@ -117,7 +118,7 @@ void main() {
 
     /* TM5723: The "1.0 - translucentMult" trick is done because of the default color attachment
     value being vec3(0.0). This makes it vec3(1.0) to avoid issues especially on improved glass */
-    vec3 translucentMult = 1.0 - texelFetch(colortex3, texelCoord, 0).rgb; //TM5723
+    vec3 translucentMult = 1.0 - max(vec3(0), texelFetch(colortex3, texelCoord, 0).rgb); //TM5723
     vec4 volumetricEffect = vec4(0.0);
 
     vec2 texCoordM = texCoord;
@@ -128,7 +129,8 @@ void main() {
     #if defined PBR_REFLECTIONS || WATER_REFLECT_QUALITY > 0 && WORLD_SPACE_REFLECTIONS_INTERNAL > 0
         if (z0 < 1.0) {
             vec4 compositeReflection = texture2D(colortex7, texCoord);
-            float fresnelM = pow2(texture2D(colortex4, texCoord).a); // including attenuation through fog and clouds
+            compositeReflection = max(vec4(0), compositeReflection);
+            float fresnelM = pow2(max(0, max(0, texture2D(colortex4, texCoord).a))); // including attenuation through fog and clouds
             if (abs(fresnelM - 0.5) < 0.5) { // 0.0 fresnel doesnt need ref calculations, and 1.0 fresnel basically means error
                 if (z0 == z1 || z0 <= 0.56) { // Solids
                     #ifdef PBR_REFLECTIONS
@@ -148,6 +150,7 @@ void main() {
                 #if WORLD_SPACE_REFLECTIONS_INTERNAL > 0
                     else { // Translucents
                         vec4 ssrReflection = texture2D(colortex8, texCoordM);
+                        ssrReflection.rgb = max(vec3(0), ssrReflection.rgb);
                         color = max(color - ssrReflection.rgb, vec3(0.0));
 
                         compositeReflection.rgb *= fresnelM;

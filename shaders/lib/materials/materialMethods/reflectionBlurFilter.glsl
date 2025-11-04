@@ -18,9 +18,11 @@ vec4 sampleBlurFilteredReflection(vec4 centerCol, float dither, float z0) {
             vec2 offset = vec2(float(dx), float(dy)) * texelSize;
             vec2 sampleCoord = texCoord + offset;
             vec4 sampleCol = texture2D(colortex7, sampleCoord);
+            sampleCol = max(vec4(0), sampleCol);
 
             // Skip step if normals are too different
             vec4 texture1Sample = texture2D(colortex1, sampleCoord);
+            // texture1Sample = max(vec4(0), texture1Sample);
             if (length(texture4.rgb - texture1Sample.rgb) > 0.1) continue;
 
             // Skip if depth is too different (costs performance for a tiny fix)

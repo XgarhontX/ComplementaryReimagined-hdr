@@ -1,5 +1,5 @@
 /*
-const int colortex0Format = R11F_G11F_B10F; //main color
+const int colortex0Format = RGB16F;         //main color
 const int colortex1Format = RGB8_SNORM;     //half res normalM
 const int colortex2Format = RGB16F;         //taa
 const int colortex3Format = RGBA8;          //(cloud/water map on deferred/gbuffer) | translucentMult & bloom & final color
@@ -9,6 +9,8 @@ const int colortex6Format = RGB8;           //smoothnessD & materialMask & skyLi
 const int colortex7Format = RGBA16F;        //(cloud/water map on gbuffer) | reflection temporal image (rgb) & previous depth
 const int colortex8Format = RGBA16F;        //SSR results for WSR, topmost translucent opacity
 */
+
+//R11F_G11F_B10F
 
 const bool colortex0Clear = true;
 const bool colortex1Clear = false;
