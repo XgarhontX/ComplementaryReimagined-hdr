@@ -1822,7 +1822,7 @@ vec3 ToneMapPass(vec3 color_untonemapped, vec3 color_tonemapped, vec2 uv) {
   #endif
 
   //saturation (pre)
-  #if RENODX_SATURATION != 100 && 
+  #if RENODX_SATURATION != 100 && (RENODX_SATURATION_ORDER == RENODX_SATURATION_ORDER_PRE || (RENODX_SATURATION_ORDER == RENODX_SATURATION_ORDER_AUTO && RENODX_SCALING == RENODX_SCALING_PERCHANNEL))
     result = SaturationOKLab(result, RENODX_SATURATION / 100.);
   #endif
 
@@ -1851,7 +1851,7 @@ vec3 ToneMapPass(vec3 color_untonemapped, vec3 color_tonemapped, vec2 uv) {
   #endif
 
   //saturation (post)
-  #if RENODX_SATURATION != 100 && 
+  #if RENODX_SATURATION != 100 && (RENODX_SATURATION_ORDER == RENODX_SATURATION_ORDER_POST || (RENODX_SATURATION_ORDER == RENODX_SATURATION_ORDER_AUTO && RENODX_SCALING == RENODX_SCALING_Y))
     result = SaturationOKLab(result, RENODX_SATURATION / 100.);
   #endif
 #else
