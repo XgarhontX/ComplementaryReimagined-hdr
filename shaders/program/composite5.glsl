@@ -71,7 +71,7 @@ TonemapResult DoCompTonemap_Lottes(in vec3 color) {
 
     color = pow(color, a) / (pow(color, a_d) * b + c);
     // color = max(vec3(0), color);
-    color = clamp01(color);
+    // color = clamp01(color);
 
     TonemapResult result;
     result.color = color;
@@ -296,13 +296,13 @@ void main() {
 
         DoBSLColorSaturation(color);
 
-        color = SrgbDecodeSafe(color);
+        color = SrgbDecode/* Safe */(color);
     #else 
         colorU *= TM_EXPOSURE;
     #endif
 
     //HDR
-    colorU = SrgbEncodeSafe(colorU);
+    colorU = SrgbEncode/* Safe */(colorU);
 
     #if LENSFLARE_MODE > 0 && defined OVERWORLD
         DoLensFlare(colorU, viewPos.xyz, dither, 2);
@@ -310,7 +310,7 @@ void main() {
 
     DoBSLColorSaturation(colorU);
 
-    colorU = SrgbDecodeSafe(colorU);
+    colorU = SrgbDecode/* Safe */(colorU);
 
     //ToneMapPass
     color = ToneMapPass(colorU, color, texCoord);
