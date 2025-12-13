@@ -70,8 +70,7 @@ TonemapResult DoCompTonemap_Lottes(in vec3 color) {
     vec3 c = (hdrMaxAD * midInA - HM1 * midInAD) / (HM2 * midOut);
 
     color = pow(color, a) / (pow(color, a_d) * b + c);
-    // color = max(vec3(0), color);
-    // color = clamp01(color);
+    color = max(vec3(0), color);
 
     TonemapResult result;
     result.color = color;
@@ -106,7 +105,7 @@ vec3 DoCompTonemap_Adjust_sRGB(in TonemapResult result) {
     float desaturatePath = smoothstep(dpInputCurveStart, dpInputCurveMax, initialLuminance);
     colorOut = mix(colorOut, vec3(GetLuminance(colorOut)), desaturatePath * TM_DARK_DESATURATION);
     
-    color = /* clamp01 */(colorOut);
+    color = max(vec3(0), colorOut);
 
     return color;
 }
@@ -246,6 +245,8 @@ void main() {
 
     //SDR
     #if defined RENODX_UPGRADE_ENABLED
+        // color = max(vec3(0), color);
+        
         #ifdef TM_LEGACY_BSL
             color = DoBSLTonemap(color);
 
@@ -310,7 +311,7 @@ void main() {
 
     DoBSLColorSaturation(colorU);
 
-    colorU = SrgbDecode/* Safe */(colorU);
+    colorU = SrgbDecodeSafe(colorU);
 
     //ToneMapPass
     color = ToneMapPass(colorU, color, texCoord);

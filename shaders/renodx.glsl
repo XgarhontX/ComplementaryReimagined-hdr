@@ -384,6 +384,13 @@ vec3 GammeCorrectSafe_PowToSrgb(vec3 c, float gamma) {
 #define ScrgbDecode(x) (x * 80.)
 #define ScrgbEncode(x) (x / 80.)
 
+// Max Scale Clamp ///////////////////////////////////////////////////////////////////////////
+vec3 ClampByMaxScaling(vec3 x, float peak) {
+  float m = max(x.x, max(x.y, x.z));
+  if (m > peak) x *= peak / x;
+  return x;
+}
+
 // PQ ///////////////////////////////////////////////////////////////////////////
 const vec3 M1 = vec3(2610.f / 16384.f);           // 0.1593017578125f;
 const vec3 M2 = vec3(128.f * (2523.f / 4096.f));  // 78.84375f;
@@ -639,6 +646,8 @@ ApplyPerChannelCorrectionResult ApplyPerChannelCorrection_Internal(
       tonemapped_perceptual.x,
       final_chromas));
   
+  // result.corrected_color = ClampByMaxScaling(result.corrected_color, 1.f);
+
   return result;
 }
 
@@ -653,6 +662,9 @@ vec3 ApplyPerChannelCorrection(vec3 untonemapped, vec3 per_channel_color) {
       1.0,
       1.0,
       0.5);
+
+  result.corrected_color = max(vec3(0), result.corrected_color);
+  result.corrected_color = ClampByMaxScaling(result.corrected_color, max(untonemapped.x, max(untonemapped.y, untonemapped.z)));
 
   #if RENODX_APPC_POW > 0
     float strength = result.tonemapped_luminance;
@@ -1845,7 +1857,8 @@ vec3 ToneMapPass(vec3 color_untonemapped, vec3 color_tonemapped, vec2 uv) {
     #endif
 
     //clamp peak
-    result = min(vec3(RENODX_PEAK_BRIGHTNESS. / RENODX_GAME_BRIGHTNESS.), result);
+    // result = min(vec3(RENODX_PEAK_BRIGHTNESS. / RENODX_GAME_BRIGHTNESS.), result);
+    result = ClampByMaxScaling(result, RENODX_PEAK_BRIGHTNESS. / RENODX_GAME_BRIGHTNESS.);
   #else
     result = ToneMapPass_None(result);
   #endif
