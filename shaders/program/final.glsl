@@ -26,12 +26,12 @@ vec2 view = vec2(viewWidth, viewHeight);
     #define OPTIFINE_AF_ERROR
 #endif
 
-#if COLORED_LIGHTING > 0 && !defined IS_IRIS
-    #define OPTIFINE_ACT_ERROR
-#endif
-
 #if COLORED_LIGHTING > 0 && defined MC_OS_MAC
     #define APPLE_ACT_ERROR
+#endif
+
+#if COLORED_LIGHTING > 0 && (!defined IS_IRIS || !defined IRIS_FEATURE_CUSTOM_IMAGES)
+    #define OPTIFINE_ACT_ERROR
 #endif
 
 #if COLORED_LIGHTING > 0
@@ -41,6 +41,10 @@ vec2 view = vec2(viewWidth, viewHeight);
 
 #if WORLD_SPACE_REFLECTIONS > 0 && COLORED_LIGHTING == 0
     #define WSR_MISSING_ACT_ERROR
+#endif
+
+#if WORLD_SPACE_REFLECTIONS_INTERNAL > 0
+    #include "/lib/voxelization/SSBOs/clearSSBOs.glsl"
 #endif
 
 //Common Functions//
@@ -118,10 +122,10 @@ void main() {
 
     #ifdef OPTIFINE_AF_ERROR
         #include "/lib/textRendering/error_optifine_af.glsl"
-    #elif defined OPTIFINE_ACT_ERROR
-        #include "/lib/textRendering/error_optifine_act.glsl"
     #elif defined APPLE_ACT_ERROR
         #include "/lib/textRendering/error_apple_act.glsl"
+    #elif defined OPTIFINE_ACT_ERROR
+        #include "/lib/textRendering/error_optifine_act.glsl"
     #elif defined WSR_MISSING_ACT_ERROR
         #include "/lib/textRendering/error_wsr_missing_act.glsl"
     #else
@@ -136,6 +140,10 @@ void main() {
                 #include "/lib/textRendering/error_shadowdistance_act.glsl"
             }
         #endif
+    #endif
+
+    #if WORLD_SPACE_REFLECTIONS_INTERNAL > 0
+        clearSSBOs();
     #endif
 
     #ifdef VIGNETTE_R

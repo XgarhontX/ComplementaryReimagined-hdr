@@ -129,8 +129,26 @@ void main() {
     #if defined PBR_REFLECTIONS || WATER_REFLECT_QUALITY > 0 && WORLD_SPACE_REFLECTIONS_INTERNAL > 0
         if (z0 < 1.0) {
             vec4 compositeReflection = texture2D(colortex7, texCoord);
-            compositeReflection = max(vec4(0), compositeReflection);
-            float fresnelM = pow2(max(0, max(0, texture2D(colortex4, texCoord).a))); // including attenuation through fog and clouds
+
+            // Partial fix for half resolution WSR-only reflections having a lot of sky gaps
+            #if WORLD_SPACE_REF_MODE == 1
+                if (REFLECTION_RES < 0.6) {
+                    vec2 refOffsets[4] = vec2[4](
+                        vec2( 1.0, 1.0),
+                        vec2(-1.0, 1.0),
+                        vec2( 1.0,-1.0),
+                        vec2(-1.0,-1.0)
+                    );
+
+                    for (int i = 0; i < 4; i++) {
+                        vec4 compositeRefSample = texture2D(colortex7, texCoord + refOffsets[i] * 1.5 / view);
+                        compositeReflection = max(vec4(0), compositeReflection);
+                        if (compositeRefSample.a > compositeReflection.a * 1.01) compositeReflection = compositeRefSample;
+                    }
+                }
+            #endif
+
+            float fresnelM = pow2(texture2D(colortex4, texCoord).a); // including attenuation through fog and clouds
             if (abs(fresnelM - 0.5) < 0.5) { // 0.0 fresnel doesnt need ref calculations, and 1.0 fresnel basically means error
                 if (z0 == z1 || z0 <= 0.56) { // Solids
                     #ifdef PBR_REFLECTIONS
@@ -180,6 +198,7 @@ void main() {
     #if defined LIGHTSHAFTS_ACTIVE || RAINBOWS > 0 && defined OVERWORLD
         vec3 nViewPos = normalize(viewPos1.xyz);
         float VdotL = dot(nViewPos, lightVec);
+        float VdotU = dot(nViewPos, upVec);
     #endif
 
     #if defined NETHER_STORM || defined COLORED_LIGHT_FOG
@@ -188,12 +207,11 @@ void main() {
     #endif
 
     #if RAINBOWS > 0 && defined OVERWORLD
-        if (isEyeInWater == 0) color += GetRainbow(translucentMult, z0, z1, lViewPos, lViewPos1, VdotL, dither);
+        color += GetRainbow(translucentMult, nViewPos, z0, z1, lViewPos, lViewPos1, VdotL, VdotU, dither);
     #endif
 
     #ifdef LIGHTSHAFTS_ACTIVE
         float vlFactorM = vlFactor;
-        float VdotU = dot(nViewPos, upVec);
 
         volumetricEffect = GetVolumetricLight(color, vlFactorM, translucentMult, lViewPos, lViewPos1, nViewPos, VdotL, VdotU, texCoord, z0, z1, dither);
     #endif
@@ -244,7 +262,13 @@ void main() {
 
     #ifdef COLORED_LIGHT_FOG
         color /= 1.0 + pow2(GetLuminance(lightFog)) * lightFogMult * 2.0;
-        color += lightFog * lightFogMult * 0.5;
+
+        lightFog = lightFog * lightFogMult * 0.5;
+        #ifdef TAA
+            // TAA neighbourhood clamping causes light fog to go too bandy. Extra dither fixes it.
+            lightFog = max(vec3(0.0), lightFog + (dither - 0.5) * 0.02);
+        #endif
+        color += lightFog;
     #endif
 
     color = pow(color, vec3(2.2));

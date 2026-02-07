@@ -32,6 +32,13 @@
             fog = 1.0 - exp(-3.0 * fog);
         #endif
 
+        #ifdef IRIS_FEATURE_FADE_VARIABLE
+            #if defined GBUFFERS_WATER || defined DEFERRED1
+                float chunkFadeM = mix(1.0, chunkFade, pow2(clamp01(lPos * 0.015))); // don't do fade very close to the player
+                fog = mix(1.0, fog, chunkFadeM);
+            #endif
+        #endif
+
         if (fog > 0.0) {
             fog = clamp(fog, 0.0, 1.0);
 
@@ -90,7 +97,7 @@
             float dayNightFogBlend = pow(invNightFactor, 4.0 - VdotS - 2.5 * sunVisibility2);
             return mix(
                 nightUpSkyColor * (nightFogMult - dayNightFogBlend * nightFogMult),
-                dayDownSkyColor * (0.9 + 0.2 * noonFactor),
+                dayDownSkyColor * (0.9 + 0.3 * noonFactor),
                 dayNightFogBlend
             );
         }
@@ -135,20 +142,22 @@
             altitudeFactor *= 1.0 - 0.75 * GetAtmFogAltitudeFactor(cameraPosition.y) * invRainFactor;
 
             #if defined SPECIAL_BIOME_WEATHER || RAIN_STYLE == 2
-                #if RAIN_STYLE == 2
-                    float factor = 1.0;
-                #else
-                    float factor = max(inSnowy, inDry);
-                #endif
+                if (isEyeInWater == 0) {
+                    #if RAIN_STYLE == 2
+                        float factor = 1.0;
+                    #else
+                        float factor = max(inSnowy, inDry);
+                    #endif
 
-                float fogFactor = 4.0;
-                #ifdef SPECIAL_BIOME_WEATHER
-                    fogFactor += 2.0 * inDry;
-                #endif
-                fogFactor *= 0.5 + 0.5 * sunVisibility;
+                    float fogFactor = 4.0;
+                    #ifdef SPECIAL_BIOME_WEATHER
+                        fogFactor += 2.0 * inDry;
+                    #endif
+                    fogFactor *= 0.5 + 0.5 * sunVisibility;
 
-                float fogIntense = pow2(1.0 - exp(-lViewPos * fogFactor / ATM_FOG_DISTANCE));
-                fog = mix(fog, fogIntense / altitudeFactor, 0.8 * rainFactor * factor);
+                    float fogIntense = pow2(1.0 - exp(-lViewPos * fogFactor / ATM_FOG_DISTANCE));
+                    fog = mix(fog, fogIntense / altitudeFactor, 0.8 * rainFactor * factor);
+                }
             #endif
 
             #ifdef CAVE_FOG
@@ -235,12 +244,15 @@ void DoDarknessFog(inout vec4 color, float lViewPos) {
     color *= exp(-fog);
 }
 
-void DoFog(inout vec4 color, inout float skyFade, float lViewPos, vec3 playerPos, float VdotU, float VdotS, float dither) {
+void DoFog(inout vec4 color, inout float skyFade, float lViewPos, vec3 playerPos, float VdotU, float VdotS, float dither, bool isReflection, float lBlockPos) {
     #ifdef CAVE_FOG
         DoCaveFog(color, lViewPos);
     #endif
     #ifdef ATMOSPHERIC_FOG
-        DoAtmosphericFog(color, playerPos, lViewPos, VdotS);
+        float lViewPosAtm = lViewPos;
+        // Reduce fog if the reflecting block is already behind fog, and fogging the reflection would result in too much fog
+        if (isReflection) lViewPosAtm *= 0.2 + 0.8 * sqrt1(max0(1.0 - lBlockPos / lViewPos));
+        DoAtmosphericFog(color, playerPos, lViewPosAtm, VdotS);
     #endif
     #ifdef BORDER_FOG
         DoBorderFog(color, skyFade, max(length(playerPos.xz), abs(playerPos.y)), VdotU, VdotS, dither);

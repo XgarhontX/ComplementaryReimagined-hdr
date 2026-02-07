@@ -42,6 +42,10 @@ vec2 view = vec2(viewWidth, viewHeight);
     float vlFactor = 0.0;
 #endif
 
+#ifdef IRIS_FEATURE_FADE_VARIABLE
+    float chunkFade = 1.0;
+#endif
+
 //Common Functions//
 float GetLinearDepth(float depth) {
     return (2.0 * near) / (far + near - depth * farMinusNear);
@@ -196,7 +200,7 @@ void main() {
         #endif
 
         vec3 texture6 = texelFetch(colortex6, texelCoord, 0).rgb;
-        bool entityOrHand = z0 < 0.56;
+        bool entityOrParticle = z0 < 0.56;
         int materialMaskInt = int(texture6.g * 255.1);
         float intenseFresnel = 0.0;
         float smoothnessD = texture6.r;
@@ -206,7 +210,7 @@ void main() {
 
         #ifdef WORLD_OUTLINE
             #ifndef WORLD_OUTLINE_ON_ENTITIES
-                if (!entityOrHand)
+                if (!entityOrParticle)
             #endif
             DoWorldOutline(color.rgb, linearZ0);
         #endif
@@ -234,9 +238,12 @@ void main() {
             fresnelM = fresnelM * sqrt1(smoothnessD) - dither * 0.01;
         #endif
 
-        waterRefColor = color.rgb;
+        #ifdef IRIS_FEATURE_FADE_VARIABLE
+            chunkFade = texture6.b > 0.50001 ? (1.0 - texture6.b) * 2.0 : 1.0;
+        #endif
 
-        DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
+        waterRefColor = color.rgb;
+        DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither, false, 0.0);
     } else { // Sky
         #ifdef DISTANT_HORIZONS
             float z0DH = texelFetch(dhDepthTex, texelCoord, 0).r;
@@ -248,7 +255,7 @@ void main() {
                 playerPos = ViewToPlayer(viewPosDH.xyz);
                 waterRefColor = color.rgb;
                 
-                DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither);
+                DoFog(color, skyFade, lViewPos, playerPos, VdotU, VdotS, dither, false, 0.0);
             } else { // Start of Actual Sky
         #endif
 

@@ -1,6 +1,6 @@
 if (abs(materialMaskInt - 149.5) < 50.0) { // Entity Reflection Handling (see common.glsl for details)
     materialMaskInt -= 100;
-    entityOrHand = true;
+    entityOrParticle = true;
 }
 
 if (materialMaskInt != 0) {
@@ -17,7 +17,7 @@ if (materialMaskInt != 0) {
                 if (materialMaskInt == 3) { // Gold Fresnel
                     intenseFresnel = 1.0;
                     reflectColor = vec3(1.0, 0.8, 0.5);
-                } else /*if (materialMaskInt == 4)*/ { // End Portal
+                } else /*if (materialMaskInt == 4)*/ { //
 
                 }
             }
