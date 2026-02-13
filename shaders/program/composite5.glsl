@@ -5,10 +5,6 @@
 //Common//
 #include "/lib/common.glsl"
 
-#define RENODX_UPGRADE_ENABLED
-#define RENODX_SCALING_DEFAULT RENODX_SCALING_Y
-#define RENODX_WORKING_COLORSPACE RENODX_BT709
-#define RENODX_HDRTONEMAP_TYPE_DEFAULT RENODX_HDRTONEMAP_TYPE_REINHARD
 #include "/renodx.glsl"
 
 //////////Fragment Shader//////////Fragment Shader//////////Fragment Shader//////////
