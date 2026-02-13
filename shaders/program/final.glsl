@@ -93,7 +93,8 @@ void main() {
             texCoordM += WATER_REFRACTION_INTENSITY * 0.00035 * sin((texCoord.x + texCoord.y) * 25.0 + frameTimeCounter * 3.0);
     #endif
 
-    vec3 color = texture2D(colortex3, texCoordM).rgb;
+    // vec3 color = texture2D(colortex3, texCoordM).rgb;
+    vec3 color =  RCASRenoDX(colortex3, ivec2(texCoordM / viewD), RENODX_RCAS, 1., RENODX_GAMMA_NONE, RENODX_WORKINGCS_AFTERTONEMAP);
 
     #if CHROMA_ABERRATION > 0
         vec2 scale = vec2(1.0, viewHeight / viewWidth);
@@ -101,9 +102,9 @@ void main() {
         color.rb = vec2(texture2D(colortex3, texCoordM + aberration).r, texture2D(colortex3, texCoordM - aberration).b);
     #endif
 
-    #if IMAGE_SHARPENING > 0
-        SharpenImage(color, texCoordM);
-    #endif
+    // #if IMAGE_SHARPENING > 0
+    //     SharpenImage(color, texCoordM);
+    // #endif
 
     /*ivec2 boxOffsets[8] = ivec2[8](
         ivec2( 1, 0),
