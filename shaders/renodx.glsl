@@ -1,3 +1,23 @@
+//////////////////Defines: ShaderPack Specific
+
+//Do SDR onto HDR UpgradeToneMap()?
+//#define RENODX_UPGRADE_ENABLED
+
+//HDR Tonemap settings (User too, but changeable for a default setting)
+#define RENODX_HDRTONEMAP_TYPE RENODX_HDRTONEMAP_TYPE_NEUTWO //[RENODX_HDRTONEMAP_TYPE_OFF RENODX_HDRTONEMAP_TYPE_REINHARD RENODX_HDRTONEMAP_TYPE_ACES RENODX_HDRTONEMAP_TYPE_GT RENODX_HDRTONEMAP_TYPE_GT7 RENODX_HDRTONEMAP_TYPE_HERMITE RENODX_HDRTONEMAP_TYPE_EXPROLL RENODX_HDRTONEMAP_TYPE_NEUTWO]
+
+//Color space expected for each step
+#define RENODX_WORKINGCS_SHADERPACK RENODX_CS_BT709 /* Internal working color space of shaderpack. */
+#define RENODX_WORKINGCS_AFTERTONEMAP RENODX_CS_BT709 /* Colorspace to encode leaving ToneMapPass(). */
+#define RENODX_WORKINGCS_HDRTONEMAP RENODX_CS_BT709 //[RENODX_CS_BT709 RENODX_CS_BT2020 RENODX_CS_AP1] /* Colorspace to do perchannel HDR tonemap. */
+#define RENODX_WORKINGCS_AFTERTONEMAP_DOCLAMP 1 /* Clamp after ToneMapPass? */
+#define RENODX_WORKINGCS_RENDERINTERMEDIATEPASSINPUT RENODX_CS_BT709 /* Colorspace to decolde entering RenderIntermediatePass(). */
+
+//Gamma encoding expected for each step
+#define RENODX_WORKINGGAMMA_AFTERTONEMAP RENODX_GAMMA_NONE /* Gamma encoding to encode leaving ToneMapPass(). */
+#define RENODX_WORKINGGAMMA_RENDERINTERMEDIATEPASSINPUT RENODX_GAMMA_SRGB /* Gamma encoding to decode entering RenderIntermediatePass(). */
+
+
 /*
 //////////////////// shaders.properties
 # RenoDX
@@ -236,25 +256,6 @@ value.RENODX_INTER_MODE.RENODX_INTER_MODE_SCRGB = scRGB (BT709)
 value.RENODX_INTER_MODE.RENODX_INTER_MODE_HDR10 = HDR10 (BT2020)
 
 */
-
-//////////////////Defines: ShaderPack Specific
-
-//Do SDR onto HDR UpgradeToneMap()?
-//#define RENODX_UPGRADE_ENABLED
-
-//HDR Tonemap settings (User too, but changeable for a default setting)
-#define RENODX_HDRTONEMAP_TYPE RENODX_HDRTONEMAP_TYPE_NEUTWO //[RENODX_HDRTONEMAP_TYPE_OFF RENODX_HDRTONEMAP_TYPE_REINHARD RENODX_HDRTONEMAP_TYPE_ACES RENODX_HDRTONEMAP_TYPE_GT RENODX_HDRTONEMAP_TYPE_GT7 RENODX_HDRTONEMAP_TYPE_HERMITE RENODX_HDRTONEMAP_TYPE_EXPROLL RENODX_HDRTONEMAP_TYPE_NEUTWO]
-
-//Color space expected for each step
-#define RENODX_WORKINGCS_SHADERPACK RENODX_CS_BT709 /* Internal working color space of shaderpack. */
-#define RENODX_WORKINGCS_AFTERTONEMAP RENODX_CS_BT709 /* Colorspace to encode leaving ToneMapPass(). */
-#define RENODX_WORKINGCS_HDRTONEMAP RENODX_CS_BT709 //[RENODX_CS_BT709 RENODX_CS_BT2020 RENODX_CS_AP1] /* Colorspace to do perchannel HDR tonemap. */
-#define RENODX_WORKINGCS_AFTERTONEMAP_DOCLAMP 1 /* Clamp after ToneMapPass? */
-#define RENODX_WORKINGCS_RENDERINTERMEDIATEPASSINPUT RENODX_CS_BT709 /* Colorspace to decolde entering RenderIntermediatePass(). */
-
-//Gamma encoding expected for each step
-#define RENODX_WORKINGGAMMA_AFTERTONEMAP RENODX_GAMMA_NONE /* Gamma encoding to encode leaving ToneMapPass(). */
-#define RENODX_WORKINGGAMMA_RENDERINTERMEDIATEPASSINPUT RENODX_GAMMA_SRGB /* Gamma encoding to decode entering RenderIntermediatePass(). */
 
 //////////////////Defines: User
 //Main
