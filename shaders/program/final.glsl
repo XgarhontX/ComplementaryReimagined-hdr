@@ -169,7 +169,7 @@ void main() {
         RGBToLinear(color); // Decode
         color = min(color, vec3(HdrGamePeakBrightness / HdrGamePaperWhiteBrightness)); // Clamp Peak
         color *= HdrGamePaperWhiteBrightness / HdrUIBrightness; // UI Scaling
-        LinearToRGB(color); // Encode s
+        LinearToRGB(color); // Encode
     #endif
 
     /* DRAWBUFFERS:0 */
