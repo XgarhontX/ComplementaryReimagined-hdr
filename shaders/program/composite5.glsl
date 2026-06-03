@@ -116,6 +116,7 @@ void DoCompTonemapHDR(inout vec3 color) {
     // Tonemap to Peak
     {
         // Extension: Lottes piecewise steal toe and midgray change, but ignore shoulder
+        // https://www.desmos.com/calculator/bdi1hggcqy
         vec3 lower = colorOut;
         //TODO: Find derivative and solve for TM_CONTRAST
         //TODO: Move to a common function?
