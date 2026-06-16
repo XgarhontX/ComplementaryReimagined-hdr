@@ -152,11 +152,7 @@ void main() {
 
     #ifdef VIGNETTE_R
         vec2 texCoordMin = texCoordM.xy - 0.5;
-        #ifndef HDR_ENABLED
-            float vignette = 1.0 - dot(texCoordMin, texCoordMin) * (1.0 - GetLuminance(color));
-        #else
-            float vignette = 1.0 - dot(texCoordMin, texCoordMin) * (1.0 - clamp(GetLuminance(color), 0, 1));
-        #endif
+        float vignette = 1.0 - dot(texCoordMin, texCoordMin) * (1.0 - min(GetLuminance(color), 1));
         color *= vignette;
     #endif
 
